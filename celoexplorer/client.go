@@ -18,12 +18,18 @@ const (
 	BaseUrl        string = "https://explorer.celo.org/api"
 	TestnetBaseUrl string = "https://alfajores-blockscout.celo-testnet.org/api"
 
+	// Celo contract address
 	CeloGold string = "471ece3750da237f93b8e339c536989b8978a438"
+	// CeloUSD contract address
 	CeloUSD  string = "765de816845861e75a25fca122bb6898b8b1282a"
+	// CeloEUR contract address
 	CeloEUR  string = "d8763cba276a3738e6de85b4b3bf5fded6d6ca73"
 	
+	// Alfajores Testnet Celo contract address
 	TestnetCeloGold string = "F194afDf50B03e69Bd7D057c1Aa9e10c9954E4C9"
+	// Alfajores Testnet CeloUSD contract address
 	TestnetCeloUSD string = "874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1"
+	// Alfajores Testnet CeloEUR contract address
 	TestnetCeloEUR string = "10c892A6EC43a53E45D0B916B4b7D383B1b78C0F"
 )
 type Client interface {
