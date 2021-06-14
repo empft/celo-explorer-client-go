@@ -26,19 +26,32 @@ const (
 	TestnetCeloUSD string = "874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1"
 	TestnetCeloEUR string = "10c892A6EC43a53E45D0B916B4b7D383B1b78C0F"
 )
+type Client interface {
+	EthGetBalance(string, *big.Int) (*big.Int, error)
+	Balance(string) (*big.Int, error) 
+	BalanceMulti([]string) ([]FetchedBalance, error) 
+	TxList(string, *request.SortDirection, *request.BlockRange, *request.PageRange, *request.FilterDirection, *request.TimeRange) ([]Transaction, error)
+	TokenTx(string, *string, *request.SortDirection, *request.BlockRange, *request.PageRange) ([]TokenTransfer, error)
+	TokenBalance(string, string) (*big.Int, error)
+	TokenList(address string) ([]Token, error)
+	GetLogs(request.BlockRangeAdv, string, request.Topics) ([]EventLog, error)
+	GetToken(string) (TokenInfo, error)
+	GetTxInfo(string) (TransactionWithLogs, error)
+	GetStatus(string) (bool, string, error)
+}
 
-type Client struct {
+type client struct {
 	req  *request.RequestClient
 }
 
-func New(url string) *Client {
+func New(url string) Client {
 	tr := &http.Transport{
 		MaxIdleConns:    100,
 		IdleConnTimeout: 30 * time.Second,
 	}
 	httpClient := &http.Client{Transport: tr}
 	reqClient := request.NewRequestClientWithHttp(url, httpClient)
-	return &Client{
+	return &client{
 		req: reqClient,
 	}
 }
@@ -64,7 +77,7 @@ func hexToByte(s string) []byte {
 
 // Mimics Ethereum JSON RPC's eth_getBalance.
 // Returns the wei balance (1 Celo = 10^18 wei) for an address as of the provided block (defaults to latest).
-func (c *Client) EthGetBalance(address string, block *big.Int) (*big.Int, error) {
+func (c *client) EthGetBalance(address string, block *big.Int) (*big.Int, error) {
 	bal, err := c.req.EthGetBalance(address, block)
 	if err != nil {
 		return nil, err
@@ -75,7 +88,7 @@ func (c *Client) EthGetBalance(address string, block *big.Int) (*big.Int, error)
 }
 
 // Get balance for address.
-func (c *Client) Balance(address string) (*big.Int, error) {
+func (c *client) Balance(address string) (*big.Int, error) {
 	bal, err := c.req.Balance(address)
 	if err != nil {
 		return nil, err
@@ -93,7 +106,7 @@ type FetchedBalance struct {
 
 // Get balance for multiple addresses.
 // If the balance hasn't been updated in a long time, we will double check with the node to fetch the absolute latest balance. This will not be reflected in the current request, but once it is updated, subsequent requests will show the updated balance. You can know that this is taking place via the `stale` attribute, which is set to `true` if a new balance is being fetched.
-func (c *Client) BalanceMulti(address []string) ([]FetchedBalance, error) {
+func (c *client) BalanceMulti(address []string) ([]FetchedBalance, error) {
 	bal, err := c.req.BalanceMulti(address)
 	if err != nil {
 		return nil, err
@@ -133,7 +146,7 @@ type Transaction struct {
 }
 
 // Get transactions sent by an address. Up to a maximum of 10,000 transactions.
-func (c *Client) TxList(address string, sort *request.SortDirection, block *request.BlockRange, page *request.PageRange, filter *request.FilterDirection, timeRange *request.TimeRange) ([]Transaction, error) {
+func (c *client) TxList(address string, sort *request.SortDirection, block *request.BlockRange, page *request.PageRange, filter *request.FilterDirection, timeRange *request.TimeRange) ([]Transaction, error) {
 	txList, err := c.req.TxList(address, sort, block, page, filter, timeRange)
 	if err != nil {
 		return nil, err
@@ -210,7 +223,7 @@ type TokenTransfer struct {
 }
 
 // Get token transfer events to and from an address.
-func (c *Client) TokenTx(address string, contractAddress *string, sort *request.SortDirection, block *request.BlockRange, page *request.PageRange) ([]TokenTransfer, error) {
+func (c *client) TokenTx(address string, contractAddress *string, sort *request.SortDirection, block *request.BlockRange, page *request.PageRange) ([]TokenTransfer, error) {
 	tokensList, err := c.req.TokenTx(address, contractAddress, sort, block, page)
 	if err != nil {
 		return nil, err
@@ -251,7 +264,7 @@ func (c *Client) TokenTx(address string, contractAddress *string, sort *request.
 }
 
 // Get token account balance for token contract address.
-func (c *Client) TokenBalance(contractAddress, address string) (*big.Int, error) {
+func (c *client) TokenBalance(contractAddress, address string) (*big.Int, error) {
 	bal, err := c.req.TokenBalance(contractAddress, address)
 	if err != nil {
 		return nil, err
@@ -270,7 +283,7 @@ type Token struct {
 }
 
 // Get list of tokens owned by address.
-func (c *Client) TokenList(address string) ([]Token, error) {
+func (c *client) TokenList(address string) ([]Token, error) {
 	tokenList, err := c.req.TokenList(address)
 	if err != nil {
 		return nil, err
@@ -307,7 +320,7 @@ type EventLog struct {
 
 // WARNING: This function may not work correctly since I am not sure whether the returned data is in hex or decimal form.
 // Get event logs for an address and/or topics. Up to a maximum of 1,000 event logs.
-func (c *Client) GetLogs(block request.BlockRangeAdv, contractAddress string, topics request.Topics) ([]EventLog, error) {
+func (c *client) GetLogs(block request.BlockRangeAdv, contractAddress string, topics request.Topics) ([]EventLog, error) {
 	logList, err := c.req.GetLogs(block, contractAddress, topics)
 	if err != nil {
 		return nil ,err
@@ -358,7 +371,7 @@ type TokenInfo struct {
 }
 
 // Get ERC-20 or ERC-721 token by contract address.
-func (c *Client) GetToken(contractAddress string) (TokenInfo, error) {
+func (c *client) GetToken(contractAddress string) (TokenInfo, error) {
 	info, err := c.req.GetToken(contractAddress)
 	if err != nil {
 		return TokenInfo{}, err
@@ -404,7 +417,7 @@ type TransactionWithLogs struct {
 }
 
 // Get transaction info.
-func (c *Client) GetTxInfo(txHash string) (TransactionWithLogs, error) {
+func (c *client) GetTxInfo(txHash string) (TransactionWithLogs, error) {
 	txInfo, err := c.req.GetTxInfo(txHash, nil)
 	if err != nil {
 		return TransactionWithLogs{}, err
@@ -454,7 +467,7 @@ func (c *Client) GetTxInfo(txHash string) (TransactionWithLogs, error) {
 }
 
 // Get transaction receipt status. 
-func (c *Client) GetTxReceiptStatus(txHash string) (bool, error) {
+func (c *client) GetTxReceiptStatus(txHash string) (bool, error) {
 	status, err := c.req.GetTxReceiptStatus(txHash)
 	if err != nil {
 		return false, err
@@ -467,7 +480,7 @@ func (c *Client) GetTxReceiptStatus(txHash string) (bool, error) {
 }
 
 // Get error status and error message. 
-func (c *Client) GetStatus(txHash string) (bool, string, error) {
+func (c *client) GetStatus(txHash string) (bool, string, error) {
 	status, err := c.req.GetStatus(txHash)
 	if err != nil {
 		return false, "", err
