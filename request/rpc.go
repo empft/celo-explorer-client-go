@@ -195,8 +195,12 @@ func (qb *queryBuilder) sort(direction *SortDirection) {
 
 func (qb *queryBuilder) blockRange(block *BlockRange) {
 	if block != nil {
-		qb.set("startblock", block.StartBlock.String())
-		qb.set("endblock", block.EndBlock.String())
+		if block.StartBlock != nil {
+			qb.set("startblock", block.StartBlock.String())
+		}
+		if block.EndBlock != nil {
+			qb.set("endblock", block.EndBlock.String())
+		}
 	}
 }
 
