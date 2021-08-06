@@ -1,4 +1,4 @@
-package request
+package celoexplorer
 
 import (
 	"encoding/json"
@@ -10,8 +10,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"gitlab.com/stevealexrs/celo-explorer-client-go/response"
 )
 
 const (
@@ -90,7 +88,7 @@ func (r *RequestClient) jsonResponse(u *url.URL, respObject interface{}) error {
 		return err
 	}
 
-	var baseResp response.BaseResponse
+	var baseResp BaseResponse
 	json.Unmarshal(body, &baseResp)
 
 	if baseResp.Status == "1" {
@@ -187,7 +185,7 @@ func (qb *queryBuilder) pageRange(pages *PageRange) {
 	}
 }
 
-func (qb *queryBuilder) sort(direction *SortDirection) {
+func (qb *queryBuilder) sort(direction *sortDirection) {
 	if direction != nil {
 		qb.set("sort", string(*direction))
 	}
@@ -204,13 +202,13 @@ func (qb *queryBuilder) blockRange(block *BlockRange) {
 	}
 }
 
-func (qb *queryBuilder) filterByDirection(filter *FilterDirection) {
+func (qb *queryBuilder) filterByDirection(filter *filterDirection) {
 	if filter != nil {
 		qb.set("filterby", string(*filter))
 	}
 }
 
-func (qb *queryBuilder) filterContract(filter *FilterContract) {
+func (qb *queryBuilder) filterContract(filter *filterContract) {
 	if filter != nil {
 		qb.set("filter", string(*filter))
 	}
@@ -395,18 +393,18 @@ type ContractInfo struct {
 	Library5Address *string
 }
 
-type SortDirection string
+type sortDirection string
 
 const (
-	Asc  SortDirection = "asc"
-	Desc SortDirection = "desc"
+	Asc  sortDirection = "asc"
+	Desc sortDirection = "desc"
 )
 
-type TopicOperator string
+type topicOperator string
 
 const (
-	And TopicOperator = "and"
-	Or TopicOperator  = "or"
+	And topicOperator = "and"
+	Or topicOperator  = "or"
 )
 
 type Topics struct {
@@ -414,12 +412,12 @@ type Topics struct {
 	Topic1 *string
 	Topic2 *string
 	Topic3 *string
-	Opr01  *TopicOperator
-	Opr02  *TopicOperator
-	Opr03  *TopicOperator
-	Opr12  *TopicOperator
-	Opr13  *TopicOperator
-	Opr23  *TopicOperator
+	Opr01  *topicOperator
+	Opr02  *topicOperator
+	Opr03  *topicOperator
+	Opr12  *topicOperator
+	Opr13  *topicOperator
+	Opr23  *topicOperator
 }
 
 type BlockRangeAdv struct {
@@ -443,21 +441,21 @@ type TimeRange struct {
 	End   time.Time
 }
 
-type FilterDirection string
+type filterDirection string
 
 const (
-	To   FilterDirection = "to"
-	From FilterDirection = "from"
+	To   filterDirection = "to"
+	From filterDirection = "from"
 )
 
-type FilterContract string
+type filterContract string
 
 const (
-	Verified      FilterContract = "verified"
-	Decompiled 	  FilterContract = "decompiled"
-	Unverified 	  FilterContract = "unverified"
-	NotDecompiled FilterContract = "not_decompiled"
-	Empty 		  FilterContract = "empty"
+	Verified      filterContract = "verified"
+	Decompiled 	  filterContract = "decompiled"
+	Unverified 	  filterContract = "unverified"
+	NotDecompiled filterContract = "not_decompiled"
+	Empty 		  filterContract = "empty"
 )
 
 // Mimics Ethereum JSON RPC's eth_getBalance.
@@ -468,8 +466,8 @@ func (r *RequestClient) EthGetBalance(address string, block *big.Int) (string, e
 	qb.address(address)
 	qb.block(block)
 
-	var ethResult response.EthResult
-	var ethError response.EthError
+	var ethResult EthResult
+	var ethError EthError
 	ok, err := r.jsonResponseDiff(u, ethResult, ethError)
 	if err != nil {
 		return "", err
@@ -483,42 +481,42 @@ func (r *RequestClient) EthGetBalance(address string, block *big.Int) (string, e
 }
 
 // Get balance for address.
-func (r *RequestClient) Balance(address string) (response.Balance, error) {
+func (r *RequestClient) Balance(address string) (Balance, error) {
 	u := buildUrl(r.base, balanceUrl)
 	qb := newQueryBuilder(u)
 	qb.address(address)
 
-	var balance response.Balance
+	var balance Balance
 	err := r.jsonResponse(u, &balance)
 	return balance, err
 }
 
 // Get balance for multiple addresses.
 // If the balance hasn't been updated in a long time, we will double check with the node to fetch the absolute latest balance. This will not be reflected in the current request, but once it is updated, subsequent requests will show the updated balance. You can know that this is taking place via the `stale` attribute, which is set to `true` if a new balance is being fetched.
-func (r *RequestClient) BalanceMulti(address []string) ([]response.BalanceMulti, error) {
+func (r *RequestClient) BalanceMulti(address []string) ([]BalanceMulti, error) {
 	u := buildUrl(r.base, balanceMultiUrl)
 	qb := newQueryBuilder(u)
 	qb.addressMulti(address)
 
-	var balanceMulti []response.BalanceMulti
+	var balanceMulti []BalanceMulti
 	err := r.jsonResponse(u, &balanceMulti)
 	return balanceMulti, err
 }
 
 // Get pending transactions by address.
-func (r *RequestClient) PendingTxList(address string, page *PageRange) ([]response.PendingTxList, error) {
+func (r *RequestClient) PendingTxList(address string, page *PageRange) ([]PendingTxList, error) {
 	u := buildUrl(r.base, pendingTxListUrl)
 	qb := newQueryBuilder(u)
 	qb.address(address)
 	qb.pageRange(page)
 
-	var pendingtxlist []response.PendingTxList
+	var pendingtxlist []PendingTxList
 	err := r.jsonResponse(u, &pendingtxlist)
 	return pendingtxlist, err
 }
 
 // Get transactions sent by an address. Up to a maximum of 10,000 transactions.
-func (r *RequestClient) TxList(address string, sort *SortDirection, block *BlockRange, page *PageRange, filter *FilterDirection, timeRange *TimeRange) ([]response.TxList, error) {
+func (r *RequestClient) TxList(address string, sort *sortDirection, block *BlockRange, page *PageRange, filter *filterDirection, timeRange *TimeRange) ([]TxList, error) {
 	u := buildUrl(r.base, txListUrl)
 	qb := newQueryBuilder(u)
 	qb.address(address)
@@ -528,13 +526,13 @@ func (r *RequestClient) TxList(address string, sort *SortDirection, block *Block
 	qb.filterByDirection(filter)
 	qb.timeRange(timeRange)
 
-	var txList []response.TxList
+	var txList []TxList
 	err := r.jsonResponse(u, &txList)
 	return txList, err
 }
 
 // Get internal transactions by transaction or address hash. Up to a maximum of 10,000 internal transactions.
-func (r *RequestClient) TxListInternal(txhash string, address *string, sort *SortDirection, block *BlockRange, page *PageRange) ([]response.TxListInternal, error) {
+func (r *RequestClient) TxListInternal(txhash string, address *string, sort *sortDirection, block *BlockRange, page *PageRange) ([]TxListInternal, error) {
 	u := buildUrl(r.base, txListInternalUrl)
 	qb := newQueryBuilder(u)
 	qb.txHash(txhash)
@@ -545,13 +543,13 @@ func (r *RequestClient) TxListInternal(txhash string, address *string, sort *Sor
 	qb.blockRange(block)
 	qb.pageRange(page)
 	
-	var txListInternal []response.TxListInternal
+	var txListInternal []TxListInternal
 	err := r.jsonResponse(u, &txListInternal)
 	return txListInternal, err
 }
 
 // Get token transfer events by address. Up to a maximum of 10,000 token transfer events.
-func (r *RequestClient) TokenTx(address string, contractAddress *string, sort *SortDirection, block *BlockRange, page *PageRange) ([]response.TokenTx, error) {
+func (r *RequestClient) TokenTx(address string, contractAddress *string, sort *sortDirection, block *BlockRange, page *PageRange) ([]TokenTx, error) {
 	u := buildUrl(r.base, tokenTxUrl)
 	qb := newQueryBuilder(u)
 	qb.address(address)
@@ -562,156 +560,156 @@ func (r *RequestClient) TokenTx(address string, contractAddress *string, sort *S
 	qb.blockRange(block)
 	qb.pageRange(page)
 
-	var tokenTx []response.TokenTx
+	var tokenTx []TokenTx
 	err := r.jsonResponse(u, &tokenTx)
 	return tokenTx, err
 }
 
 // Get token account balance for token contract address.
-func (r *RequestClient) TokenBalance(contractAddress, address string) (response.TokenBalance, error) {
+func (r *RequestClient) TokenBalance(contractAddress, address string) (TokenBalance, error) {
 	u := buildUrl(r.base, tokenBalanceUrl)
 	qb := newQueryBuilder(u)
 	qb.contractAddress(contractAddress)
 	qb.address(address)
 
-	var tokenBalance response.TokenBalance
+	var tokenBalance TokenBalance
 	err := r.jsonResponse(u, &tokenBalance)
 	return tokenBalance, err
 }
 
 // Get list of tokens owned by address.
-func (r *RequestClient) TokenList(address string) ([]response.TokenList, error) {
+func (r *RequestClient) TokenList(address string) ([]TokenList, error) {
 	u := buildUrl(r.base, tokenListUrl)
 	qb := newQueryBuilder(u)
 	qb.address(address)
 
-	var tokenList []response.TokenList
+	var tokenList []TokenList
 	err := r.jsonResponse(u, &tokenList)
 	return tokenList, err
 }
 
 // Get list of blocks mined by address.
-func (r *RequestClient) GetMinedBlocks(address string, page *PageRange) ([]response.GetMinedBlocks, error) {
+func (r *RequestClient) GetMinedBlocks(address string, page *PageRange) ([]GetMinedBlocks, error) {
 	u := buildUrl(r.base, getMinedBlocksUrl)
 	qb := newQueryBuilder(u)
 	qb.address(address)
 	qb.pageRange(page)
 
-	var getMinedBlocks []response.GetMinedBlocks
+	var getMinedBlocks []GetMinedBlocks
 	err := r.jsonResponse(u, &getMinedBlocks)
 	return getMinedBlocks, err
 }
 
 // Get a list of accounts and their balances, sorted ascending by the time they were first seen by the explorer.
-func (r *RequestClient) ListAccounts(page *PageRange) ([]response.ListAccounts, error) {
+func (r *RequestClient) ListAccounts(page *PageRange) ([]ListAccounts, error) {
 	u := buildUrl(r.base, listAccountsUrl)
 	qb := newQueryBuilder(u)
 	qb.pageRange(page)
 
-	var listAccounts []response.ListAccounts
+	var listAccounts []ListAccounts
 	err := r.jsonResponse(u, &listAccounts)
 	return listAccounts, err
 }
 
 // Get event logs for an address and/or topics. Up to a maximum of 1,000 event logs.
-func (r *RequestClient) GetLogs(block BlockRangeAdv, contractAddress string, topics Topics) ([]response.GetLogs, error) {
+func (r *RequestClient) GetLogs(block BlockRangeAdv, contractAddress string, topics Topics) ([]GetLogs, error) {
 	u := buildUrl(r.base, getLogsUrl)
 	qb := newQueryBuilder(u)
 	qb.blockRangeAdv(block)
 	qb.address(contractAddress)
 	qb.topics(topics)
 
-	var getLogs []response.GetLogs
+	var getLogs []GetLogs
 	err := r.jsonResponse(u, &getLogs)
 	return getLogs, err
 }
 
 // Get ERC-20 or ERC-721 token by contract address.
-func (r *RequestClient) GetToken(contractAddress string) (response.GetToken, error) {
+func (r *RequestClient) GetToken(contractAddress string) (GetToken, error) {
 	u := buildUrl(r.base, getTokenUrl)
 	qb := newQueryBuilder(u)
 	qb.contractAddress(contractAddress)
 
-	var getToken response.GetToken
+	var getToken GetToken
 	err := r.jsonResponse(u, &getToken)
 	return getToken, err
 }
 
 // Get token holders by contract address.
-func (r *RequestClient) GetTokenHolders(contractAddress string, page *PageRange) ([]response.GetTokenHolders, error) {
+func (r *RequestClient) GetTokenHolders(contractAddress string, page *PageRange) ([]GetTokenHolders, error) {
 	u := buildUrl(r.base, getTokenHoldersUrl)
 	qb := newQueryBuilder(u)
 	qb.contractAddress(contractAddress)
 	qb.pageRange(page)
 
-	var getTokenHolders []response.GetTokenHolders
+	var getTokenHolders []GetTokenHolders
 	err := r.jsonResponse(u, &getTokenHolders)
 	return getTokenHolders, err
 }
 
 // Get ERC-20 or ERC-721 token total supply by contract address.
-func (r *RequestClient) TokenSupply(contractAddress string) (response.TokenSupply, error) {
+func (r *RequestClient) TokenSupply(contractAddress string) (TokenSupply, error) {
 	u := buildUrl(r.base, tokenSupplyUrl)
 	qb := newQueryBuilder(u)
 	qb.contractAddress(contractAddress)
 
-	var tokenSupply response.TokenSupply
+	var tokenSupply TokenSupply
 	err := r.jsonResponse(u, &tokenSupply)
 	return tokenSupply, err
 }
 
 // Get total supply in Wei from exchange.
-func (r *RequestClient) EthSupplyExchange() (response.EthSupplyExchange, error) {
+func (r *RequestClient) EthSupplyExchange() (EthSupplyExchange, error) {
 	u := buildUrl(r.base, ethSupplyExchangeUrl)
 
-	var ethSupplyExchange response.EthSupplyExchange
+	var ethSupplyExchange EthSupplyExchange
 	err := r.jsonResponse(u, &ethSupplyExchange)
 	return ethSupplyExchange, err
 }
 
 // Get total supply in Wei from DB.
-func (r *RequestClient) EthSupply() (response.EthSupply, error) {
+func (r *RequestClient) EthSupply() (EthSupply, error) {
 	u := buildUrl(r.base, ethSupplyUrl)
 
-	var ethSupply response.EthSupply
+	var ethSupply EthSupply
 	err := r.jsonResponse(u, &ethSupply)
 	return ethSupply, err
 }
 
 // Get total coin supply from DB minus burnt number.
-func (r *RequestClient) CoinSupply() (response.CoinSupply, error) {
+func (r *RequestClient) CoinSupply() (CoinSupply, error) {
 	u := buildUrl(r.base, coinSupplyUrl)
 
-	var coinSupply response.CoinSupply
+	var coinSupply CoinSupply
 	err := r.jsonResponse(u, &coinSupply)
 	return coinSupply, err
 }
 
 // Get latest price in USD and BTC.
-func (r *RequestClient) EthPrice() (response.EthPrice, error) {
+func (r *RequestClient) EthPrice() (EthPrice, error) {
 	u := buildUrl(r.base, ethPriceUrl)
 
-	var ethPrice response.EthPrice
+	var ethPrice EthPrice
 	err := r.jsonResponse(u, &ethPrice)
 	return ethPrice, err
 }
 
 // Get estimated total number of transactions.
-func (r *RequestClient) TotalTransactions() (response.TotalTransactions, error) {
+func (r *RequestClient) TotalTransactions() (TotalTransactions, error) {
 	u := buildUrl(r.base, totalTransactionsUrl)
 
-	var totalTransactions response.TotalTransactions
+	var totalTransactions TotalTransactions
 	err := r.jsonResponse(u, &totalTransactions)
 	return totalTransactions, err
 }
 
 // Get block reward by block number.
-func (r *RequestClient) GetBlockReward(blockNumber *big.Int) (response.GetBlockReward, error) {
+func (r *RequestClient) GetBlockReward(blockNumber *big.Int) (GetBlockReward, error) {
 	u := buildUrl(r.base, getBlockRewardUrl)
 	qb := newQueryBuilder(u)
 	qb.blockNo(blockNumber)
 
-	var getBlockReward response.GetBlockReward
+	var getBlockReward GetBlockReward
 	err := r.jsonResponse(u, &getBlockReward)
 	return getBlockReward, err
 }
@@ -720,8 +718,8 @@ func (r *RequestClient) GetBlockReward(blockNumber *big.Int) (response.GetBlockR
 func (r *RequestClient) EthBlockNumber() (string, error) {
 	u := buildUrl(r.base, ethBlockNumberUrl)
 
-	var ethResult response.EthResult
-	var ethError response.EthError
+	var ethResult EthResult
+	var ethError EthError
 	ok, err := r.jsonResponseDiff(u, ethResult, ethError)
 	if err != nil {
 		return "", err
@@ -735,82 +733,82 @@ func (r *RequestClient) EthBlockNumber() (string, error) {
 }
 
 // Get a list of contracts, sorted ascending by the time they were first seen by the explorer. If you provide the filters `not_decompiled`(`4`) or `not_verified(4)` the results will not be sorted for performance reasons.
-func (r *RequestClient) ListContracts(page *PageRange, filter *FilterContract, notVersion *string) ([]response.ListContracts, error) {
+func (r *RequestClient) ListContracts(page *PageRange, filter *filterContract, notVersion *string) ([]ListContracts, error) {
 	u := buildUrl(r.base, listContractsUrl)
 	qb := newQueryBuilder(u)
 	qb.pageRange(page)
 	qb.filterContract(filter)
 	qb.notDecompiledWithVersion(notVersion)
 
-	var listContracts []response.ListContracts
+	var listContracts []ListContracts
 	err := r.jsonResponse(u, &listContracts)
 	return listContracts, err
 }
 
 // Get ABI for verified contract. 
-func (r *RequestClient) GetAbi(address string) (response.GetAbi, error) {
+func (r *RequestClient) GetAbi(address string) (GetAbi, error) {
 	u := buildUrl(r.base, getAbiUrl)
 	qb := newQueryBuilder(u)
 	qb.address(address)
 
-	var getAbi response.GetAbi
+	var getAbi GetAbi
 	err := r.jsonResponse(u, &getAbi)
 	return getAbi, err
 }
 
 // Get contract source code for verified contract.
-func (r *RequestClient) GetSourceCode(address string, ignoreProxy *bool) (response.GetSourceCode, error) {
+func (r *RequestClient) GetSourceCode(address string, ignoreProxy *bool) (GetSourceCode, error) {
 	u := buildUrl(r.base, getSourceCodeUrl)
 	qb := newQueryBuilder(u)
 	qb.address(address)
 	qb.ignoreProxy(ignoreProxy)
 
-	var getSourceCode response.GetSourceCode
+	var getSourceCode GetSourceCode
 	err := r.jsonResponse(u, &getSourceCode)
 	return getSourceCode, err
 }
 
 // Verify a contract with its source code and contract creation information.
-func (r *RequestClient) Verify(contract ContractInfo) (response.Verify, error) {
+func (r *RequestClient) Verify(contract ContractInfo) (Verify, error) {
 	u := buildUrl(r.base, verifyUrl)
 	qb := newQueryBuilder(u)
 	qb.verify(contract)
 
-	var verify response.Verify
+	var verify Verify
 	err := r.jsonResponse(u, &verify)
 	return verify, err
 }
 
 // Get transaction info.
-func (r *RequestClient) GetTxInfo(txhash string, index *int) (response.GetTxInfo, error) {
+func (r *RequestClient) GetTxInfo(txhash string, index *int) (GetTxInfo, error) {
 	u := buildUrl(r.base, getTxInfoUrl)
 	qb := newQueryBuilder(u)
 	qb.txHash(txhash)
 	qb.index(index)
 
-	var getTxInfo response.GetTxInfo
+	var getTxInfo GetTxInfo
 	err := r.jsonResponse(u, &getTxInfo)
 	return getTxInfo, err
 }
 
 // Get transaction receipt status.
-func (r *RequestClient) GetTxReceiptStatus(txhash string) (response.GetTxReceiptStatus, error) {
+func (r *RequestClient) GetTxReceiptStatus(txhash string) (GetTxReceiptStatus, error) {
 	u := buildUrl(r.base, getTxReceiptStatusUrl)
 	qb := newQueryBuilder(u)
 	qb.txHash(txhash)
 
-	var getTxReceiptStatus response.GetTxReceiptStatus
+	var getTxReceiptStatus GetTxReceiptStatus
 	err := r.jsonResponse(u, &getTxReceiptStatus)
 	return getTxReceiptStatus, err
 }
 
 // Get error status and error message.
-func (r *RequestClient) GetStatus(txhash string) (response.GetStatus, error) {
+func (r *RequestClient) GetStatus(txhash string) (GetStatus, error) {
 	u := buildUrl(r.base, getStatusUrl)
 	qb := newQueryBuilder(u)
 	qb.txHash(txhash)
 
-	var getStatus response.GetStatus
+	var getStatus GetStatus
 	err := r.jsonResponse(u, &getStatus)
 	return getStatus, err
 }

@@ -1,4 +1,4 @@
-package response
+package celoexplorer
 
 import "encoding/json"
 

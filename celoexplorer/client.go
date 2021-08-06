@@ -10,8 +10,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"gitlab.com/stevealexrs/celo-explorer-client-go/request"
 )
 
 const (
@@ -33,7 +31,7 @@ const (
 	TestnetCeloEUR string = "10c892A6EC43a53E45D0B916B4b7D383B1b78C0F"
 )
 type Client struct {
-	req  *request.RequestClient
+	req  *RequestClient
 }
 
 func New(url string) *Client {
@@ -42,7 +40,7 @@ func New(url string) *Client {
 		IdleConnTimeout: 30 * time.Second,
 	}
 	httpClient := &http.Client{Transport: tr}
-	reqClient := request.NewRequestClientWithHttp(url, httpClient)
+	reqClient := NewRequestClientWithHttp(url, httpClient)
 	return &Client{
 		req: reqClient,
 	}
@@ -138,7 +136,7 @@ type Transaction struct {
 }
 
 // Get transactions sent by an address. Up to a maximum of 10,000 transactions.
-func (c *Client) TxList(address string, sort *request.SortDirection, block *request.BlockRange, page *request.PageRange, filter *request.FilterDirection, timeRange *request.TimeRange) ([]Transaction, error) {
+func (c *Client) TxList(address string, sort *sortDirection, block *BlockRange, page *PageRange, filter *filterDirection, timeRange *TimeRange) ([]Transaction, error) {
 	txList, err := c.req.TxList(address, sort, block, page, filter, timeRange)
 	if err != nil {
 		return nil, err
@@ -215,7 +213,7 @@ type TokenTransfer struct {
 }
 
 // Get token transfer events to and from an address.
-func (c *Client) TokenTx(address string, contractAddress *string, sort *request.SortDirection, block *request.BlockRange, page *request.PageRange) ([]TokenTransfer, error) {
+func (c *Client) TokenTx(address string, contractAddress *string, sort *sortDirection, block *BlockRange, page *PageRange) ([]TokenTransfer, error) {
 	tokensList, err := c.req.TokenTx(address, contractAddress, sort, block, page)
 	if err != nil {
 		return nil, err
@@ -312,7 +310,7 @@ type EventLog struct {
 
 // WARNING: This function may not work correctly since I am not sure whether the returned data is in hex or decimal form.
 // Get event logs for an address and/or topics. Up to a maximum of 1,000 event logs.
-func (c *Client) GetLogs(block request.BlockRangeAdv, contractAddress string, topics request.Topics) ([]EventLog, error) {
+func (c *Client) GetLogs(block BlockRangeAdv, contractAddress string, topics Topics) ([]EventLog, error) {
 	logList, err := c.req.GetLogs(block, contractAddress, topics)
 	if err != nil {
 		return nil ,err
