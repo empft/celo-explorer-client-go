@@ -136,7 +136,7 @@ type Transaction struct {
 }
 
 // Get transactions sent by an address. Up to a maximum of 10,000 transactions.
-func (c *Client) TxList(address string, sort *sortDirection, block *BlockRange, page *PageRange, filter *filterDirection, timeRange *TimeRange) ([]Transaction, error) {
+func (c *Client) TxList(address string, sort *sortDirectionType, block *BlockRange, page *PageRange, filter *filterDirectionType, timeRange *TimeRange) ([]Transaction, error) {
 	txList, err := c.req.TxList(address, sort, block, page, filter, timeRange)
 	if err != nil {
 		return nil, err
@@ -213,7 +213,7 @@ type TokenTransfer struct {
 }
 
 // Get token transfer events to and from an address.
-func (c *Client) TokenTx(address string, contractAddress *string, sort *sortDirection, block *BlockRange, page *PageRange) ([]TokenTransfer, error) {
+func (c *Client) TokenTx(address string, contractAddress *string, sort *sortDirectionType, block *BlockRange, page *PageRange) ([]TokenTransfer, error) {
 	tokensList, err := c.req.TokenTx(address, contractAddress, sort, block, page)
 	if err != nil {
 		return nil, err

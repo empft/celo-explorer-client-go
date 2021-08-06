@@ -185,7 +185,7 @@ func (qb *queryBuilder) pageRange(pages *PageRange) {
 	}
 }
 
-func (qb *queryBuilder) sort(direction *sortDirection) {
+func (qb *queryBuilder) sort(direction *sortDirectionType) {
 	if direction != nil {
 		qb.set("sort", string(*direction))
 	}
@@ -202,13 +202,13 @@ func (qb *queryBuilder) blockRange(block *BlockRange) {
 	}
 }
 
-func (qb *queryBuilder) filterByDirection(filter *filterDirection) {
+func (qb *queryBuilder) filterByDirection(filter *filterDirectionType) {
 	if filter != nil {
 		qb.set("filterby", string(*filter))
 	}
 }
 
-func (qb *queryBuilder) filterContract(filter *filterContract) {
+func (qb *queryBuilder) filterContract(filter *filterContractType) {
 	if filter != nil {
 		qb.set("filter", string(*filter))
 	}
@@ -393,31 +393,37 @@ type ContractInfo struct {
 	Library5Address *string
 }
 
-type sortDirection string
+type sortDirectionType string
 
-const (
-	Asc  sortDirection = "asc"
-	Desc sortDirection = "desc"
-)
+var SortDirection = struct {
+	Asc  sortDirectionType
+	Desc sortDirectionType
+} {
+	Asc: "asc",
+	Desc: "desc",
+}
 
-type topicOperator string
+type topicOperatorType string
 
-const (
-	And topicOperator = "and"
-	Or topicOperator  = "or"
-)
+var TopicOperator = struct {
+	And topicOperatorType
+	Or  topicOperatorType
+} {
+	And: "and",
+	Or: "or",
+}
 
 type Topics struct {
 	Topic0 string
 	Topic1 *string
 	Topic2 *string
 	Topic3 *string
-	Opr01  *topicOperator
-	Opr02  *topicOperator
-	Opr03  *topicOperator
-	Opr12  *topicOperator
-	Opr13  *topicOperator
-	Opr23  *topicOperator
+	Opr01  *topicOperatorType
+	Opr02  *topicOperatorType
+	Opr03  *topicOperatorType
+	Opr12  *topicOperatorType
+	Opr13  *topicOperatorType
+	Opr23  *topicOperatorType
 }
 
 type BlockRangeAdv struct {
@@ -441,22 +447,31 @@ type TimeRange struct {
 	End   time.Time
 }
 
-type filterDirection string
+type filterDirectionType string
 
-const (
-	To   filterDirection = "to"
-	From filterDirection = "from"
-)
+var FilterDirection = struct {
+	To   filterDirectionType
+	From filterDirectionType
+} {
+	To: "to",
+	From: "from",
+}
 
-type filterContract string
+type filterContractType string
 
-const (
-	Verified      filterContract = "verified"
-	Decompiled 	  filterContract = "decompiled"
-	Unverified 	  filterContract = "unverified"
-	NotDecompiled filterContract = "not_decompiled"
-	Empty 		  filterContract = "empty"
-)
+var FilterContract = struct {
+	Verified   	  filterContractType
+	Decompiled 	  filterContractType
+	Unverified 	  filterContractType
+	NotDecompiled filterContractType
+	Empty 		  filterContractType
+} {
+	Verified: "verified",
+	Decompiled: "decompiled",
+	Unverified: "unverified",
+	NotDecompiled: "not_decompiled",
+	Empty: "empty",
+}
 
 // Mimics Ethereum JSON RPC's eth_getBalance.
 // Returns the wei balance (1 Celo = 10^18 wei) for an address as of the provided block (defaults to latest).
@@ -516,7 +531,7 @@ func (r *RequestClient) PendingTxList(address string, page *PageRange) ([]Pendin
 }
 
 // Get transactions sent by an address. Up to a maximum of 10,000 transactions.
-func (r *RequestClient) TxList(address string, sort *sortDirection, block *BlockRange, page *PageRange, filter *filterDirection, timeRange *TimeRange) ([]TxList, error) {
+func (r *RequestClient) TxList(address string, sort *sortDirectionType, block *BlockRange, page *PageRange, filter *filterDirectionType, timeRange *TimeRange) ([]TxList, error) {
 	u := buildUrl(r.base, txListUrl)
 	qb := newQueryBuilder(u)
 	qb.address(address)
@@ -532,7 +547,7 @@ func (r *RequestClient) TxList(address string, sort *sortDirection, block *Block
 }
 
 // Get internal transactions by transaction or address hash. Up to a maximum of 10,000 internal transactions.
-func (r *RequestClient) TxListInternal(txhash string, address *string, sort *sortDirection, block *BlockRange, page *PageRange) ([]TxListInternal, error) {
+func (r *RequestClient) TxListInternal(txhash string, address *string, sort *sortDirectionType, block *BlockRange, page *PageRange) ([]TxListInternal, error) {
 	u := buildUrl(r.base, txListInternalUrl)
 	qb := newQueryBuilder(u)
 	qb.txHash(txhash)
@@ -549,7 +564,7 @@ func (r *RequestClient) TxListInternal(txhash string, address *string, sort *sor
 }
 
 // Get token transfer events by address. Up to a maximum of 10,000 token transfer events.
-func (r *RequestClient) TokenTx(address string, contractAddress *string, sort *sortDirection, block *BlockRange, page *PageRange) ([]TokenTx, error) {
+func (r *RequestClient) TokenTx(address string, contractAddress *string, sort *sortDirectionType, block *BlockRange, page *PageRange) ([]TokenTx, error) {
 	u := buildUrl(r.base, tokenTxUrl)
 	qb := newQueryBuilder(u)
 	qb.address(address)
@@ -733,7 +748,7 @@ func (r *RequestClient) EthBlockNumber() (string, error) {
 }
 
 // Get a list of contracts, sorted ascending by the time they were first seen by the explorer. If you provide the filters `not_decompiled`(`4`) or `not_verified(4)` the results will not be sorted for performance reasons.
-func (r *RequestClient) ListContracts(page *PageRange, filter *filterContract, notVersion *string) ([]ListContracts, error) {
+func (r *RequestClient) ListContracts(page *PageRange, filter *filterContractType, notVersion *string) ([]ListContracts, error) {
 	u := buildUrl(r.base, listContractsUrl)
 	qb := newQueryBuilder(u)
 	qb.pageRange(page)
